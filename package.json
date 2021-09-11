@@ -1,0 +1,30 @@
+{
+  "displayName": "GyroscopeController",
+  "name": "com.renardjojo.ext.gyro",
+  "version": "1.0.0",
+  "unity": "2019.2",
+  "description": "Gyroscope controller to help user to controlle more easly the mobile gyroscope",
+  "keywords": [
+    "nunit",
+    "unittest",
+    "test"
+  ],
+  "category": "Libraries",
+  "repository": {
+    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.ext.nunit.git",
+    "type": "git",
+    "revision": "29ea4d6504a5f58fb3a6934db839aa80ae6d9d88"
+  },
+  "relatedPackages": {
+    "com.unity.ext.nunit.tests": "1.0.0"
+  },
+  "upmCi": {
+    "footprint": "e9f76bd265402773096bf08a8ffb51cd3d76f39a"
+  },
+  "author": {
+    "name": "Six Jonathan",
+    "email": "unity@example.com",
+    "url": "https://www.unity3d.com"
+  },
+  "type": "tool"
+}
