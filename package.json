@@ -1,17 +1,18 @@
 {
-  "displayName": "GyroscopeController",
-  "name": "com.renardjojo.ext.gyro",
+  "displayName": "Mesh picking",
+  "name": "com.sixjonathan.ext.meshpiching",
   "version": "1.0.0",
   "unity": "2019.2",
-  "description": "Gyroscope controller to help user to controlle more easly the mobile gyroscope",
+  "description": "",
   "keywords": [
-    "nunit",
-    "unittest",
-    "test"
+    "Picking",
+    "Mouse Picking",
+    "Mesh Picking",
+    "Selection shader"
   ],
   "category": "Libraries",
   "repository": {
-    "url": "https://github.cds.internal.unity3d.com/unity/com.unity.ext.nunit.git",
+    "url": "https://github.com/FoxUnityPackage/MeshPicking.git",
     "type": "git",
     "revision": "29ea4d6504a5f58fb3a6934db839aa80ae6d9d88"
   },
@@ -23,8 +24,8 @@
   },
   "author": {
     "name": "Six Jonathan",
-    "email": "unity@example.com",
-    "url": "https://www.unity3d.com"
+    "email": "Six-Joanthan@orange.fr",
+    "url": "https://www.linkedin.com/feed/"
   },
-  "type": "tool"
+  "type": "Feature"
 }
