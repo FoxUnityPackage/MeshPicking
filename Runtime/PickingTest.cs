@@ -1,25 +1,48 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 // This script allow you to test the picking. Use you mobile and you mouse and click on element.
 // This element will be deactivated
 public class PickingTest : MonoBehaviour
 {
-    [SerializeField] protected PickingManager m_PickingManager;
+    protected PickingSystem m_PickingSystem;
+    private bool isClic;
+
+    IEnumerator Start()
+    {
+        m_PickingSystem = GameObject.FindObjectOfType<PickingSystem>();
         
+        while (false)
+        {
+            // Wait until all rendering + UI is done.
+            yield return new WaitForEndOfFrame();
+
+            if (isClic)
+            {
+                GameObject obj = m_PickingSystem.Picking(Input.mousePosition);
+                if (obj)
+                {
+                    obj.SetActive(false);
+                }
+            }
+        }
+    }
+
     void Update()
     {
 #if UNITY_STANDALONE
-        bool isClic = Input.GetMouseButtonDown(0);     
+        isClic = Input.GetMouseButtonDown(0);     
 #else
-        bool isClic = (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began);
-#endif
+        isClic = (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began);
+#endif  
+        
         if (isClic)
         {
-            GameObject obj = m_PickingManager.Picking(Input.mousePosition);
+            GameObject obj = m_PickingSystem.Picking(Input.mousePosition);
             if (obj)
+            {
                 obj.SetActive(false);
+            }
         }
     }
 }

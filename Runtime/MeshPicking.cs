@@ -1,25 +1,28 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(MeshRenderer))]
 public class MeshPicking : MonoBehaviour
 {
     protected MeshRenderer m_MeshRenderer;
-    protected static List<int> m_AvalableID = new List<int>();
-    protected static int m_StaticID = 0;
-    protected int m_ID = -1;
+    protected static List<uint> m_AvalableID = new List<uint>();
+    protected static uint m_StaticID = 0;
+    protected uint m_ID = 0;
     protected int m_PreviousLayer = -1;
     protected Material[] m_previousMaterial;
 
     // Register the component
-    void Start()
+    void Awake()
     {
         m_MeshRenderer = GetComponent<MeshRenderer>();
-        PickingManager.GetInstance().Register(this);
-        
+        PickingSystem.GetSafeInstance().Register(this);
+    }
+
+    void Start()
+    {
         // Try to recycle available ID else create another
         if (m_AvalableID.Count != 0)
         {
@@ -35,12 +38,27 @@ public class MeshPicking : MonoBehaviour
     // Unregister the component
     void OnDestroy()
     {
-        PickingManager.GetInstance().UnRegister(this);
+        PickingSystem.GetInstance().UnRegister(this);
         m_AvalableID.Add(m_ID);
     }
 
-    // Assign previous value and send ID to the shader. This function is called only in PickingManager
-    public void StartPicking(Material pickingMaterial, int pickingLayer)
+    float EncodeUI8ToFloat(byte value)
+    {
+        return value / (float)byte.MaxValue;
+    }
+    
+    float EncodeUI16ToFloat(UInt16 value)
+    {
+        return value / (float)UInt16.MaxValue;
+    }
+    
+    float EncodeUI32ToFloat(UInt32 value)
+    {
+        return value / (float)UInt32.MaxValue;
+    }
+    
+    // Assign previous value and send ID to the shader. This function is called only in PickingSystem
+    public void StartPicking(Material pickingMaterial, int pickingLayer, EPickingFormat pickingFormat)
     {
         m_PreviousLayer = gameObject.layer;
         m_previousMaterial = m_MeshRenderer.materials;
@@ -54,22 +72,36 @@ public class MeshPicking : MonoBehaviour
         m_MeshRenderer.materials = matCp;
 
         gameObject.layer = pickingLayer;
+
+        float normalizedID;
+        switch (pickingFormat)
+        {
+            case EPickingFormat.R8bit:
+                normalizedID = EncodeUI8ToFloat((byte)m_ID);
+                break;
+            case EPickingFormat.R16bit:
+                normalizedID = EncodeUI16ToFloat((UInt16)m_ID);
+                break;
+            case EPickingFormat.R32bit:
+                normalizedID = EncodeUI32ToFloat(m_ID);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(pickingFormat), pickingFormat, null);
+        }
         
         // Send ID to the GPU (convert int ID to float ID ranged between 0 and 1)
-        float fltID = 1f / m_ID;
-        
         for (int i = 0; i < m_MeshRenderer.materials.Length; i++)
-            m_MeshRenderer.material.SetFloat("_GameObjectID", fltID);
+            m_MeshRenderer.material.SetFloat("_GameObjectID", normalizedID);
     }
 
-    // Reassign previous value. This function is called only in PickingManager
+    // Reassign previous value. This function is called only in PickingSystem
     public void EndPicking()
     {
         gameObject.layer = m_PreviousLayer;
         m_MeshRenderer.materials = m_previousMaterial;
     }
 
-    public int GetID()
+    public uint GetID()
     {
         return m_ID;
     }

@@ -2,11 +2,11 @@ Shader "Unlit/PickingShader"
 {
     Properties
     {
-        _GameObjectID ("Game Object ID", float) = 0
+        _GameObjectID ("Game Object ID", Float) = 0
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="SRPDefaultUnlit" }
         LOD 100
 
         Pass
@@ -36,10 +36,9 @@ Shader "Unlit/PickingShader"
                 return o;
             }
 
-            float4 frag (v2f i) : SV_Target
+            float frag() : COLOR
             {
-                // sample the texture
-                return float4(_GameObjectID, 0., 0., 0.);
+                return _GameObjectID;
             }
             ENDCG
         }

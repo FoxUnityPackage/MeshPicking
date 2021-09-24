@@ -1,9 +1,11 @@
 fileFormatVersion: 2
-guid: bda9deeb283d10e48a0fd67d48b3f932
+guid: e90d4018c3b4a40438c0556fa1d24187
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - m_RenderTexture: {instanceID: 0}
+  - m_mousePickingRenderPipeline: {fileID: 11400000, guid: 0abb58db13e4526428867e82ba2ea565, type: 2}
   executionOrder: 0
   icon: {fileID: 2800000, guid: 9066a67cef5d6df4faa0411762e974ab, type: 3}
   userData: 
