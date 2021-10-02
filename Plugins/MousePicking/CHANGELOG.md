@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Basis of MeshPicking. Each gameObject with MeshPicking component can be selected using PickingSystem.Instance.Picking().
 - Added a custum rendering pipeline to improve the selection process by the GPU.
+- Add compatibilty with animation
 
 
 ### Changed

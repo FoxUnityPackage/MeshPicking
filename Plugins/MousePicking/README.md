@@ -21,6 +21,7 @@ Each time you want to select an element, a new rendering buffer is created and i
 This allows to simplify the code and to modify the renderTexture specification without recreating it.
 A custum render pipeline is used. If you use a GPU debugger like renderDoc, you can see that this pass is as simple as possible.
 The main camera, materials, and layers of the gameObjects are modified for the picking pass and reset afterwards.
+This feature work with SkinnedMesh so with animation.
 
 ## License:
 This tool is based on the unity license and the MIT license. So you are free to modify this tool according to unity rules.
