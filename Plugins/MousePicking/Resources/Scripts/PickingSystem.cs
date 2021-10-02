@@ -9,7 +9,7 @@
 
  public enum EPickingFormat
  {
-     Auto,
+     AUTO,
      R8bit,
      R16bit,
      R32bit
@@ -25,40 +25,66 @@
 
  public class PickingSystem : MonoBehaviour 
  {
-
-     // Singleton
+#region Singleton
      protected static PickingSystem m_Instance = null;
+     public static PickingSystem Instance
+     {
+         get
+         {
+             Debug.Log("instance");
+             if (m_Instance == null)
+             {
+                 m_Instance = FindObjectOfType<PickingSystem>();
+                 if (m_Instance == null)
+                 {
+                     // Create the Picking system
+                     GameObject newObj = new GameObject("PickingSystem");
+                     m_Instance = Instantiate(newObj).AddComponent<PickingSystem>();
+                 }
+             }
+
+             return m_Instance;
+         }
+     }
+#endregion
+
+     // Component collection
      protected List<MeshPicking> m_MeshPickingBuffer = new List<MeshPicking>();
-     [SerializeField]
+     
+     // Buffer used to collect the gameObject ID
      protected RenderTexture m_RenderTexture = null;
      
+     // Mouse picking shader
      protected Shader m_PickingShader = null;
+     
+     // Layer used for the picking pass
      protected int m_LayerPicking = -1;
+     
+     // The render pipeline to use to process the picking pass
+     protected MousePickingRenderPipelineAsset m_mousePickingRenderPipeline;
      
      [SerializeField, Range(0, 1)]
      [Tooltip("This value correspond to the ratio of the render texture used compared to the screen size. Less this value is, better performance will be but with less precision")]
-     protected float m_RenderTextureScreenRatio = 0.5f;
-
-     [SerializeField]
-     [Tooltip("The format used for the texture. 8bit = max 255 object. 16bit = max 65535 objects. More the size is, slower the process will be")]
-     protected EPickingFormat m_Format = EPickingFormat.R16bit;
+     protected float m_RenderTextureScreenRatio = 0.25f;
+     
+     [Tooltip("The format used for the texture. 8bit = max 255 object. 16bit = max 65535 objects. More the size is, slower the process will be. Use auto to let the system manage it")]
+     public EPickingFormat m_Format = EPickingFormat.AUTO;
+     
+     [Tooltip("The format used for the depth buffer. Highter this value will be, highter prescision you will have but slowest the process will be")]
+     public EDepthType m_DepthType = EDepthType.Z_BUFFER_32;
      
      [SerializeField]
-     protected EDepthType m_DepthType = EDepthType.Z_BUFFER_16;
-
-     [SerializeField]
-     private bool m_InvertYScreen = false;
+     [Tooltip("Use this flag to vertically flip the mouse position ")]
+     public bool m_InvertYScreen = false;
      
      [SerializeField]
-     private bool m_InvertXScreen = false;
-     
-     
-     
-     public RenderPipelineAsset m_mousePickingRenderPipeline;
+     [Tooltip("Use this flag to horizontally flip the mouse position ")]
+     public bool m_InvertXScreen = false;
 
      void Awake()
      {
-         if (m_Instance != null)
+         Debug.Log("Awake");
+         if (m_Instance != null && m_Instance != this)
          {
              GameObject.Destroy(m_Instance);
              return;
@@ -67,16 +93,16 @@
              m_Instance = this;
          
          DontDestroyOnLoad(this);
-
+         
          m_LayerPicking = LayerMask.NameToLayer("Picking");
          // If asset append here, you need to add "Picking" in the layer.
          // See https://docs.unity3d.com/Manual/Layers.html to understand how to add layer
          // You can also right click on PickingSystem/Install package settings
          Assert.IsFalse(m_LayerPicking == -1, "Layer Picking must be assigned in Layer Manager. You can also right click on PickingSystem/Install package settings");
-     }
 
-     void Start()
-     {
+         // Create the render pipeline to precess picking
+         m_mousePickingRenderPipeline = (MousePickingRenderPipelineAsset)ScriptableObject.CreateInstance(typeof(MousePickingRenderPipelineAsset));
+         
 #if UNITY_EDITOR
          // If asset append here, you need to include shader in your projectSettings/Graphics/AlwaysIncludedShader properties 
          // You can also right click on PickingSystem/Install package settings
@@ -92,24 +118,7 @@
          // If assert append here, your system don't support current PickingFormat and you need to use another format
          Assert.IsTrue(SystemInfo.SupportsRenderTextureFormat(GetRTFormat()));
          Assert.IsTrue(SystemInfo.SupportsTextureFormat(GetTextureFormat()));
-     }
-
-     // Use this function by default. Replace by GetInstance if you instantiate PickingSystem yourself
-     public static PickingSystem GetSafeInstance()
-     {
-         if (m_Instance == null)
-         {
-             // Create the Picking system
-             GameObject newObj = new GameObject("PickingSystem");
-             m_Instance = Instantiate(newObj).AddComponent<PickingSystem>();
-         }
-             
-         return m_Instance;
-     }
-     
-     public static PickingSystem GetInstance()
-     {
-         return m_Instance;
+         
      }
 
      public EPickingFormat ComputeNecessaryFormat()
@@ -138,9 +147,9 @@
      }
      
      // This function must be called only by MeshPicking to unregister them onto the system
-     public void UnRegister(MeshPicking objectToRegister)
+     public void Unregister(MeshPicking objectToUnregister)
      {
-         m_MeshPickingBuffer.Remove(objectToRegister);
+         m_MeshPickingBuffer.Remove(objectToUnregister);
      }
      
      // Render the scene with the main camera
@@ -202,7 +211,7 @@
 
      RenderTextureFormat GetRTFormat()
      {
-         EPickingFormat format = m_Format == EPickingFormat.Auto ? ComputeNecessaryFormat() : m_Format; 
+         EPickingFormat format = m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format; 
          switch (format)
          {
              case EPickingFormat.R8bit:
@@ -218,7 +227,7 @@
      
      TextureFormat GetTextureFormat()
      {
-         EPickingFormat format = m_Format == EPickingFormat.Auto ? ComputeNecessaryFormat() : m_Format; 
+         EPickingFormat format = m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format; 
          switch (format)
          {
              case EPickingFormat.R8bit:
@@ -260,7 +269,7 @@
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
          {
              Material newMat = new Material(m_PickingShader);
-             m_MeshPickingBuffer[i].StartPicking(newMat, m_LayerPicking, m_Format == EPickingFormat.Auto ? ComputeNecessaryFormat() : m_Format);
+             m_MeshPickingBuffer[i].StartPicking(newMat, m_LayerPicking, m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format);
          }
 
          // Render the picking scene
@@ -287,7 +296,7 @@
          
          // Convert float ID ranged between 0 and 1 to int ID
          uint pixelID;
-         switch (m_Format == EPickingFormat.Auto ? ComputeNecessaryFormat() : m_Format)
+         switch (m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format)
          {
              case EPickingFormat.R8bit:
                  pixelID = DecodeFloatToUI8(image.GetPixel(0, 0).r);
@@ -304,6 +313,8 @@
 
          GameObject target = null;
 
+         Debug.Log(m_MeshPickingBuffer.Count + "    " + pixelID);
+         
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
          {
              // Reassign previous layers and materials
@@ -343,7 +354,7 @@
      }
 
      [ContextMenu("Install package settings")]
-     public void Install()
+     protected void Install()
      {
          AddAlwaysIncludedShader("Unlit/PickingShader");
          AddLayer("Picking");
@@ -352,7 +363,7 @@
      }
      
      [ContextMenu("Uninstall package Settings")]
-     public void Uninstall()
+     protected void Uninstall()
      {
          RemoveAlwaysIncludedShader("Unlit/PickingShader");
          RemoveLayer("Picking");

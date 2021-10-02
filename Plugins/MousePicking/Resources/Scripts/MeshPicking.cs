@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-[RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshRenderer)), DisallowMultipleComponent]
 public class MeshPicking : MonoBehaviour
 {
     protected MeshRenderer m_MeshRenderer;
@@ -14,15 +14,21 @@ public class MeshPicking : MonoBehaviour
     protected int m_PreviousLayer = -1;
     protected Material[] m_previousMaterial;
 
-    // Register the component
-    void Awake()
+    private void OnEnable()
     {
-        m_MeshRenderer = GetComponent<MeshRenderer>();
-        PickingSystem.GetSafeInstance().Register(this);
+        PickingSystem.Instance.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        PickingSystem.Instance.Unregister(this);
     }
 
     void Start()
     {
+        // Register the component
+        m_MeshRenderer = GetComponent<MeshRenderer>();
+        
         // Try to recycle available ID else create another
         if (m_AvalableID.Count != 0)
         {
@@ -38,7 +44,7 @@ public class MeshPicking : MonoBehaviour
     // Unregister the component
     void OnDestroy()
     {
-        PickingSystem.GetInstance().UnRegister(this);
+        PickingSystem.Instance.Unregister(this);
         m_AvalableID.Add(m_ID);
     }
 
