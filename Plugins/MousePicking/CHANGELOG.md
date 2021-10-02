@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
-## [1.0.0] - 2021-09-11 
+## [1.0.0] - 2021-10-01 
 ### Added
-- Add GyroscopicMovementLinker script. Allow user to control orientation of gameobject thanks to the gryo.
+- Basis of MeshPicking. Each gameObject with MeshPicking component can be selected using PickingSystem.Instance.Picking().
+- Added a custum rendering pipeline to improve the selection process by the GPU.
+
 
 ### Changed
  
