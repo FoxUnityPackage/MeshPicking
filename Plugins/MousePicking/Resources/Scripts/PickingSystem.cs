@@ -45,6 +45,12 @@
              return m_Instance;
          }
      }
+
+     // Useful to check in the OnDestroy function if the singleton exists without recreating an instance.
+    public static bool IsInstanceExist()
+     {
+         return m_Instance;
+     }
 #endregion
 
      // Component collection

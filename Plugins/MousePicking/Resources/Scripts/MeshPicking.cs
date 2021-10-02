@@ -14,19 +14,22 @@ public class MeshPicking : MonoBehaviour
     protected int m_PreviousLayer = -1;
     protected Material[] m_previousMaterial;
 
+    // Register the component
     private void OnEnable()
     {
         PickingSystem.Instance.Register(this);
     }
 
+    // Unregister the component
     private void OnDisable()
     {
-        PickingSystem.Instance.Unregister(this);
+        if (PickingSystem.IsInstanceExist())
+            PickingSystem.Instance.Unregister(this);
+        m_AvalableID.Add(m_ID);
     }
 
     void Start()
     {
-        // Register the component
         m_MeshRenderer = GetComponent<Renderer>();
         
         // Try to recycle available ID else create another
@@ -39,13 +42,6 @@ public class MeshPicking : MonoBehaviour
         {
             m_ID = ++m_StaticID;
         }
-    }
-
-    // Unregister the component
-    void OnDestroy()
-    {
-        PickingSystem.Instance.Unregister(this);
-        m_AvalableID.Add(m_ID);
     }
 
     float EncodeUI8ToFloat(byte value)
