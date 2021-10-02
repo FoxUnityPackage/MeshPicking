@@ -5,6 +5,7 @@
  using UnityEngine.Assertions;
  using UnityEngine.Experimental.Rendering;
  using UnityEngine.Rendering;
+ using UnityEngine.UI;
 
  public enum EPickingFormat
  {
@@ -44,6 +45,13 @@
      
      [SerializeField]
      protected EDepthType m_DepthType = EDepthType.Z_BUFFER_16;
+
+     [SerializeField]
+     private bool m_InvertYScreen = false;
+     
+     [SerializeField]
+     private bool m_InvertXScreen = false;
+     
      
      
      public RenderPipelineAsset m_mousePickingRenderPipeline;
@@ -263,7 +271,11 @@
 
          // Compute the position in render texture referential
          float finalPosX = m_RenderTexture.width * position.x / Screen.width;
+         if (m_InvertXScreen)
+             finalPosX = Screen.width - finalPosX;
          float finalPosY = m_RenderTexture.height * position.y / Screen.height;
+         if (m_InvertYScreen)
+             finalPosY = Screen.height - finalPosY;
          
          // Read the desired pixel
          RenderTexture.active = m_RenderTexture;
@@ -289,7 +301,7 @@
              default:
                  throw new ArgumentOutOfRangeException();
          }
-         
+
          GameObject target = null;
 
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
