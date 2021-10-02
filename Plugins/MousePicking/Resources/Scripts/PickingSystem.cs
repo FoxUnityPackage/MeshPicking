@@ -31,7 +31,6 @@
      {
          get
          {
-             Debug.Log("instance");
              if (m_Instance == null)
              {
                  m_Instance = FindObjectOfType<PickingSystem>();
@@ -83,7 +82,6 @@
 
      void Awake()
      {
-         Debug.Log("Awake");
          if (m_Instance != null && m_Instance != this)
          {
              GameObject.Destroy(m_Instance);
@@ -313,8 +311,6 @@
 
          GameObject target = null;
 
-         Debug.Log(m_MeshPickingBuffer.Count + "    " + pixelID);
-         
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
          {
              // Reassign previous layers and materials
