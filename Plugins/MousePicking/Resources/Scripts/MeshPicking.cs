@@ -4,10 +4,10 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-[RequireComponent(typeof(MeshRenderer)), DisallowMultipleComponent]
+[RequireComponent(typeof(Renderer)), DisallowMultipleComponent]
 public class MeshPicking : MonoBehaviour
 {
-    protected MeshRenderer m_MeshRenderer;
+    protected Renderer m_MeshRenderer;
     protected static List<uint> m_AvalableID = new List<uint>();
     protected static uint m_StaticID = 0;
     protected uint m_ID = 0;
@@ -27,7 +27,7 @@ public class MeshPicking : MonoBehaviour
     void Start()
     {
         // Register the component
-        m_MeshRenderer = GetComponent<MeshRenderer>();
+        m_MeshRenderer = GetComponent<Renderer>();
         
         // Try to recycle available ID else create another
         if (m_AvalableID.Count != 0)

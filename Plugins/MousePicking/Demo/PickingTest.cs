@@ -22,8 +22,8 @@ public class PickingTest : MonoBehaviour
             GameObject obj = PickingSystem.Instance.Picking(pos);
             if (obj)
             {
+                Debug.Log(obj.name);
                 obj.transform.localScale /= 2f;
-                
             }
         }
     }
