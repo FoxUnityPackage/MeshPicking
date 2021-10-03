@@ -18,11 +18,11 @@ public class PickingTest : MonoBehaviour
         Vector2 pos = Input.mousePosition;
 #else
             Vector2 pos = Input.GetTouch(0).position;
-#endif  
+#endif
             GameObject obj = PickingSystem.Instance.Picking(pos);
             if (obj)
             {
-                Debug.Log(obj.name);
+                Debug.Log($"{obj.name}");
                 obj.transform.localScale /= 2f;
             }
         }

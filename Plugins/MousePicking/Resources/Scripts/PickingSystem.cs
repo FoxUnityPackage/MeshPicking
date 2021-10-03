@@ -1,5 +1,6 @@
  using System;
  using System.Collections.Generic;
+ using System.Runtime.InteropServices;
  using UnityEditor;
  using UnityEngine;
  using UnityEngine.Assertions;
@@ -57,7 +58,7 @@
      protected List<MeshPicking> m_MeshPickingBuffer = new List<MeshPicking>();
      
      // Buffer used to collect the gameObject ID
-     protected RenderTexture m_RenderTexture = null;
+     public RenderTexture m_ColorRenderTexture = null;
      
      // Mouse picking shader
      protected Shader m_PickingShader = null;
@@ -177,7 +178,7 @@
          cam.allowMSAA = false;
 
          CreateRenderTexture(cam.pixelWidth, cam.pixelHeight);
-         cam.targetTexture = m_RenderTexture;
+         cam.targetTexture = m_ColorRenderTexture;
          
          // change current render pipeline for simplest RP
          RenderPipelineAsset previousRP = GraphicsSettings.renderPipelineAsset;
@@ -244,15 +245,53 @@
                  throw new ArgumentOutOfRangeException();
          }
      }
+     
+     TextureFormat GetDepthTextureFormat()
+     {
+         switch (m_DepthType)
+         {
+             case EDepthType.Z_BUFFER_16:
+                 return TextureFormat.RHalf;
+             case EDepthType.Z_BUFFER_24:
+             case EDepthType.Z_BUFFER_32:
+                 return TextureFormat.RFloat;
+             default:
+                 throw new ArgumentOutOfRangeException();
+         }
+     }
 
      // Create the render texture based on the setting
      void CreateRenderTexture(float camWidth, float camHeight)
      {
          int width = (int)(camWidth * m_RenderTextureScreenRatio);
          int height = (int)(camHeight * m_RenderTextureScreenRatio);
-         m_RenderTexture = RenderTexture.GetTemporary(width, height, 0, GetRTFormat());
-         m_RenderTexture.filterMode = FilterMode.Point;
-         m_RenderTexture.depth = (int)m_DepthType;
+         
+         m_ColorRenderTexture = RenderTexture.GetTemporary(width, height, (int)m_DepthType, GetRTFormat());
+         m_ColorRenderTexture.filterMode = FilterMode.Point;
+         m_ColorRenderTexture.autoGenerateMips = false;
+     }
+
+     uint ReadGameObjectID(Vector2 position)
+     {
+         // Make a new texture and read the active Render Texture into it.
+         Texture2D image = new Texture2D(1, 1, GetTextureFormat(), false);
+
+         // Read the desired pixel
+         RenderTexture.active = m_ColorRenderTexture;
+         image.ReadPixels(new Rect(position.x, position.y, 1, 1), 0, 0, false);
+         
+         // Convert float ID ranged between 0 and 1 to int ID
+         switch (m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format)
+         {
+             case EPickingFormat.R8bit:
+                 return DecodeFloatToUI8(image.GetPixel(0, 0).r);
+             case EPickingFormat.R16bit:
+                 return DecodeFloatToUI16(image.GetPixel(0, 0).r);
+             case EPickingFormat.R32bit:
+                 return DecodeFloatToUI32(image.GetPixel(0, 0).r);
+             default:
+                 throw new ArgumentOutOfRangeException();
+         }
      }
 
      // Call this function to now if the an object is clicked by the user. Example : 
@@ -266,9 +305,6 @@
      // Return the gameObject selected or null
      public GameObject Picking(Vector2 position)
      {
-         // Get previous renderTexture
-         RenderTexture previousRT = RenderTexture.active;
-         
          // Init picking process in each meshPicking component
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
          {
@@ -278,43 +314,19 @@
 
          // Render the picking scene
          RenderScene();
-
-         // Make a new texture and read the active Render Texture into it.
-        Texture2D image = new Texture2D(1, 1, GetTextureFormat(), false);
-
-         // Compute the position in render texture referential
-         float finalPosX = m_RenderTexture.width * position.x / Screen.width;
-         if (m_InvertXScreen)
-             finalPosX = Screen.width - finalPosX;
-         float finalPosY = m_RenderTexture.height * position.y / Screen.height;
-         if (m_InvertYScreen)
-             finalPosY = Screen.height - finalPosY;
          
-         // Read the desired pixel
-         RenderTexture.active = m_RenderTexture;
-         image.ReadPixels(new Rect(finalPosX, finalPosY, 1, 1), 0, 0, false);
+         // Compute the position in render texture referential
+         position.x = m_RenderTextureScreenRatio * (m_InvertXScreen ? Screen.width - position.x : position.x);
+         position.y = m_RenderTextureScreenRatio * (m_InvertYScreen ? Screen.height - position.y : position.y);
 
-         // Reassign previous renderTexture
-         RenderTexture.ReleaseTemporary(m_RenderTexture);
+         RenderTexture previousRT = RenderTexture.active;
+         
+         // Read the pixel to determine if gameObject is selected
+         uint gameObjectID = ReadGameObjectID(position);
+
+         RenderTexture.ReleaseTemporary(m_ColorRenderTexture);
          RenderTexture.active = previousRT;
          
-         // Convert float ID ranged between 0 and 1 to int ID
-         uint pixelID;
-         switch (m_Format == EPickingFormat.AUTO ? ComputeNecessaryFormat() : m_Format)
-         {
-             case EPickingFormat.R8bit:
-                 pixelID = DecodeFloatToUI8(image.GetPixel(0, 0).r);
-                 break;
-             case EPickingFormat.R16bit:
-                 pixelID = DecodeFloatToUI16(image.GetPixel(0, 0).r);
-                 break;
-             case EPickingFormat.R32bit:
-                 pixelID = DecodeFloatToUI32(image.GetPixel(0, 0).r);
-                 break;
-             default:
-                 throw new ArgumentOutOfRangeException();
-         }
-
          GameObject target = null;
 
          for (int i = 0; i < m_MeshPickingBuffer.Count; i++)
@@ -322,8 +334,8 @@
              // Reassign previous layers and materials
              m_MeshPickingBuffer[i].EndPicking();
              
-             // Check if ID correspond to the pixelID
-             if (m_MeshPickingBuffer[i].GetID() == pixelID)
+             // Check if ID correspond to the gameObjectID
+             if (m_MeshPickingBuffer[i].GetID() == gameObjectID)
                  target = m_MeshPickingBuffer[i].gameObject;
          }
 
